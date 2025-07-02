@@ -83,7 +83,17 @@ class UserProfileScreen {
                     : ""
                 }
                 `;
-                //badgeElem.addEventListener("click", () => UIManager.showBadgeModal(badge));
+                badgeElem.addEventListener("click", () => {
+                    document.getElementById("badge-title").textContent = badge.information.name;
+                    document.getElementById("badge-description").textContent = badge.information.description;
+                    document.getElementById("badge-level").textContent = `Niveau ${badge.level} / ${badge.information.maxLevel}`;
+                    let img = badge.information.image;
+                    if (img.indexOf("http") !== 0) {
+                        img = `https://utopixia.com${img}`;
+                    }
+                    document.getElementById("badge-modal-image").src = img;
+                    document.getElementById("modal-badge-details").classList.remove("hidden");
+                });
                 badgeContainer.appendChild(badgeElem);
             });
         });
