@@ -9,6 +9,7 @@ const eventManager = new EventManager((data) => {
 
 
     const events = new EventBus();
+    const notificationService = new NotificationService(address);
     const writeService = new GraphWriteService(eventManager, address);
     const store = new LocalStoreService(address);
     const ctx = new Context(address, store, events);
@@ -42,7 +43,8 @@ const eventManager = new EventManager((data) => {
             writeService,
             window.UtopixiaChat.app.ctx,
             window.UtopixiaChat.app.events,
-            data.threadId
+            data.threadId,
+            notificationService
         );
         view.render();
         return view
@@ -114,16 +116,17 @@ const eventManager = new EventManager((data) => {
             events.emit("users:loaded", rawUsers);
         }
 
-        // 3️⃣ Lancer la sync réseau
+
+        if (!hasBeenLoaded) {
+            window.UtopixiaChat.ScreenManager.show("loadingWelcome");
+        }
+        
         graph.fetchProfile(address).then((profile) => {
             ctx.profile = profile;
             store.saveProfile(profile);
             events.emit("profile:loaded", profile);
         });
 
-        if (!hasBeenLoaded) {
-            window.UtopixiaChat.ScreenManager.show("loadingWelcome");
-        }
         graph.fetchUserGroups(eventManager, address).then(groups => {
             ctx.setGroups(groups);
             store.saveGroups(ctx.groups.map(g => g.serialize()));
@@ -140,9 +143,29 @@ const eventManager = new EventManager((data) => {
             const currentThread = ctx.getCurrentThread()
 
 
+            const isChecked = document.getElementById("group-config-notify").checked;
+            notificationService.isNotificationActivated(currentThread.id).then((isActivated) => {
+                console.log("Notification state for thread:", currentThread.id, "isActivated:", isActivated, "isChecked:", isChecked);
+                if(isActivated !== isChecked){
+                    let threadGraphID = currentThread.id;
+                    if(currentThread.type !== "private"){
+                        threadGraphID = currentThread.graphID
+                    }
+                    Wormhole.getUserProfile(address).then((userProfileGraph) => {
+                        notificationService.updateNotificationState(eventManager, userProfileGraph, currentThread.id, threadGraphID, isChecked).then(() => {
+                            console.log("Notification state updated for thread:", threadGraphID, "to", isChecked);
+                        })
+                    })
+                }
+            })
+
+
+
+
             if(currentThread.type === "private"){
                 const threadGraphID = currentThread.id;
                 if(threadName === currentThread.name){
+                    document.getElementById("modal-thread-config").classList.add("hidden");
                     return
                 }
                 if (threadName.length > 0) {
@@ -159,6 +182,11 @@ const eventManager = new EventManager((data) => {
                 const groupGraphID =  currentThread.graphID;
                 const threadID = currentThread.threadID;
 
+
+                if(currentThread.authorizedUsers.length === 0 || (currentThread.authorizedUsers.length > 0 && !currentThread.authorizedUsers.some((user) => user === address))){
+                    document.getElementById("modal-thread-config").classList.add("hidden");
+                    return
+                }
                 let newThreadName = currentThread.name
                 if(threadName.length > 0){
                     newThreadName = threadName

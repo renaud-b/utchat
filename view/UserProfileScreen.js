@@ -33,7 +33,7 @@ class UserProfileScreen {
                 </div>
 
                 <input class="w-full bg-gray-800 text-white p-2 rounded border border-gray-600" placeholder="Pseudo" id="profile-input-name" value="${convertHtmlCodesToAccents(userObject.object.graphName || '')}">
-                <textarea rows="3" class="w-full bg-gray-800 text-white p-2 rounded border border-gray-600" placeholder="Description..." id="profile-input-description">${convertHtmlCodesToAccents(userObject.object.description || '')}</textarea>
+                <textarea rows="3" class="w-full bg-gray-800 text-white p-2 rounded border border-gray-600 min-h-[64px]" placeholder="Description..." id="profile-input-description">${convertHtmlCodesToAccents(userObject.object.description || '')}</textarea>
                 <button class="mt-4 border border-gray-600 text-gray-600 px-4 py-2 rounded invisible" id="update-user-profile-btn" disabled>Enregistrer</button>
                 <div class="border-t border-gray-700 pt-4">
                     <div class="text-xl font-bold">🎖️ Badges</div>

@@ -1,5 +1,5 @@
 class MessageList {
-    constructor(container, store, writeService, context, eventBus, threadId) {
+    constructor(container, store, writeService, context, eventBus, threadId, notificationService) {
         this.currentReplyToId = null;
         this.container = container;
         this.store = store
@@ -7,6 +7,8 @@ class MessageList {
         this.ctx = context;
         this.eventBus = eventBus;
         this.thread = this.ctx.findThreadById(threadId);
+        this.notificationService = notificationService
+
         if(this.thread){
             this.thread.lastReadTimestamp = Date.now();
             this.store.saveThreadLastReadTimestamp(this.thread.id, this.thread.lastReadTimestamp);
@@ -189,7 +191,8 @@ Thread introuvable
                     <button id="btn-cancel-reply" class="ml-2 text-red-400 hover:text-red-600 text-lg">&times;</button>
                   </div>
                   <div class="flex">
-                    <input id="msg-input" type="text" class="flex-1 bg-gray-700 text-white rounded-l px-3 py-2 focus:outline-none" placeholder="Votre message..." />
+                    <textarea id="msg-input" rows="1" class="flex-1 bg-gray-700 text-white rounded-l px-3 py-2 focus:outline-none resize-none overflow-hidden" placeholder="Votre message..."></textarea>
+
                     <button id="btn-send" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-r">
                         <i class="fas fa-paper-plane"></i>
                     </button>
@@ -389,8 +392,14 @@ Thread introuvable
 
         const input = this.container.querySelector('#msg-input');
         if (input) {
+            input.addEventListener('input', () => {
+                input.style.height = 'auto';
+                input.style.height = input.scrollHeight + 'px';
+            });
+
             input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
                     this.sendMessage();
                 }
             });
@@ -406,6 +415,11 @@ Thread introuvable
                 if(!isPrivate){
                     isAdmin = (group && group.owner === this.ctx.address) || this.thread.authorizedUsers.some((addr) => addr === this.ctx.address);
                 }
+
+                this.notificationService.isNotificationActivated(this.thread.id).then((isActivated) => {
+                    console.log("notification state for thread", this.thread.id, ":", isActivated);
+                    document.getElementById("group-config-notify").checked = isActivated;
+                })
 
                 // Remplir les valeurs
                 document.getElementById('group-config-name').value = this.thread.name || "";
@@ -669,6 +683,8 @@ Thread introuvable
             threadID = '';
         }
         input.value = '';
+        input.style.height = 'auto';
+
         let replyTo = null;
         if (this.currentReplyToId) {
             const replyMsg = this.thread.messages.find(m => m.id === this.currentReplyToId);

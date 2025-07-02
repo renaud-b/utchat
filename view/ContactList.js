@@ -53,7 +53,10 @@ class ContactsList {
         });
 
         // Ajout de contact
-        this.container.querySelector('#btn-add-contact').addEventListener('click', () => {
+        this.container.querySelector('#btn-confirm-add-contact').addEventListener('click', () => {
+            Wormhole.getUserProfile(this.address).then((currentUserProfile) => {
+
+            })
             document.getElementById('modal-add-contact').classList.remove('hidden');
         });
 
