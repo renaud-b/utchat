@@ -76,7 +76,6 @@ class GroupList {
         const groupId = this.ctx.selectedGroupId;
         const selectedGroup = this.ctx.findGroupById(groupId);
         const threads = selectedGroup.threads;
-        console.log("Rendering group list for group ID:", groupId, "with threads:", threads);
         const groupUnreadMap = {};
         this.ctx.groups.forEach(group => {
             const unread = group.threads.reduce((sum, thread) => {
@@ -86,6 +85,7 @@ class GroupList {
             }, 0);
             groupUnreadMap[group.id] = unread;
         });
+        const isPrivate = selectedGroup.isPrivate;
         const isOwner = selectedGroup.owner === this.ctx.address;
         this.container.innerHTML = `
             <div class="flex flex-1 overflow-hidden" style="height: 85%;">
@@ -95,7 +95,7 @@ class GroupList {
                 <div class="flex-1 p-4 overflow-y-auto">
                     <h2 class="text-xl font-bold mb-4 flex justify-between items-center">
                       ${selectedGroup.name || '📂 Discussions'}
-                      ${isOwner ? '<button id="btn-add-thread" class="ml-2 bg-blue-600 hover:bg-blue-700 text-white rounded px-2">+</button>' : ''}
+                      ${(isOwner || isPrivate) ? '<button id="btn-add-thread" class="ml-2 bg-blue-600 hover:bg-blue-700 text-white rounded px-2">+</button>' : ''}
                     </h2>
 
                     <ul class="space-y-2" id="thread-list-container">
@@ -113,12 +113,12 @@ class GroupList {
             </div>
         `;
 
-        this.attachGroupEvents();
+        this.attachGroupEvents(selectedGroup);
         this.attachThreadEvents();
         this.attachFooterEvents();
     }
 
-    attachGroupEvents() {
+    attachGroupEvents(selectedGroup) {
         this.container.querySelectorAll('[data-group-id]').forEach(icon => {
             icon.addEventListener('click', () => {
 
@@ -136,14 +136,57 @@ class GroupList {
         });
         const btnAddThread = this.container.querySelector('#btn-add-thread');
         if (btnAddThread) {
+            const isPrivate = selectedGroup.isPrivate;
             btnAddThread.addEventListener('click', () => {
-                document.getElementById('modal-create-thread').classList.remove('hidden');
+                if (isPrivate) {
+                    this.showPrivateConversationModal();
+                } else {
+                    document.getElementById('modal-create-thread').classList.remove('hidden');
+                }
             });
         }
-
-
-
     }
+
+    showPrivateConversationModal() {
+        const modal = document.getElementById('modal-start-private-conversation');
+        const list = document.getElementById('private-conversation-contacts');
+        list.innerHTML = "";
+
+        this.ctx.contacts.forEach(contact => {
+            const li = document.createElement('li');
+            li.className = 'p-2 bg-gray-700 rounded cursor-pointer hover:bg-gray-600 flex items-center gap-2';
+            li.innerHTML = `
+      <img src="${contact.avatar}" class="w-8 h-8 rounded-full">
+      <span>${contact.name}</span>
+    `;
+            li.dataset.address = contact.address;
+            li.addEventListener('click', () => {
+                list.querySelectorAll('li').forEach(el => {
+                    el.classList.remove('border-blue-400')
+                    el.classList.remove('border')
+                });
+                li.classList.add('border');
+                li.classList.add('border-blue-600');
+                this.selectedContact = contact.address;
+            });
+            list.appendChild(li);
+        });
+
+        this.selectedContact = null;
+        modal.classList.remove('hidden');
+
+        const validateBtn = document.getElementById('btn-validate-private-conversation');
+        validateBtn.onclick = () => {
+            if (this.selectedContact) {
+                console.log("Contact sélectionné :", this.selectedContact);
+                // Plus tard : trigger la création de conversation
+                modal.classList.add('hidden');
+            } else {
+                alert("Veuillez sélectionner un contact.");
+            }
+        };
+    }
+
 
     attachThreadEvents() {
         this.container.querySelectorAll('[data-thread-id]').forEach(item => {

@@ -310,6 +310,19 @@
     </div>
 </div>
 
+<div id="modal-start-private-conversation" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-gray-800 text-white w-full max-w-md rounded-lg shadow-lg p-6 space-y-4 border border-gray-700">
+        <h2 class="text-xl font-bold">Créer une conversation privée</h2>
+        <ul id="private-conversation-contacts" class="space-y-2 max-h-80 overflow-y-auto">
+            <!-- Contacts dynamiques -->
+        </ul>
+        <div class="flex justify-end gap-2">
+            <button class="px-4 py-2 bg-gray-600 rounded hover:bg-gray-700" onclick="document.getElementById('modal-start-private-conversation').classList.add('hidden')">Annuler</button>
+            <button id="btn-validate-private-conversation" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700">Valider</button>
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
