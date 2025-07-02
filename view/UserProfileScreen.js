@@ -9,7 +9,6 @@ class UserProfileScreen {
 
     render() {
         const userObject = this.ctx.profile || {};
-        console.log(this.ctx.profile)
         this.container.innerHTML = `
             <div class="flex flex-col h-full overflow-y-auto p-4 text-center space-y-4">
                             <div class="flex items-center justify-between p-3 bg-gray-800">

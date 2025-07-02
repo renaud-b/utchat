@@ -44,7 +44,6 @@ class ScreenManager {
     }
 
     hide(screenId) {
-        console.log(this.screensInstances)
         if (this.screensInstances && this.screensInstances[screenId]) {
             if (typeof this.screensInstances[screenId].destroy === 'function') {
                 this.screensInstances[screenId].destroy();

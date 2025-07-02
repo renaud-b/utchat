@@ -244,8 +244,6 @@
     registerMessageEventListener('disconnect', (msg) => {
         localStorage.removeItem("encryptedKey")
         window.location.reload()
-
-        console.log("start to disconnect user")
     })
     // Chargement initial si wallet dans le localStorage
     app.loadWalletFromStorage();

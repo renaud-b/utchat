@@ -12,7 +12,6 @@ class LocalStoreService {
                 keysToRemove.push(key);
             }
         }
-        console.log("remove all keys: ", keysToRemove)
         keysToRemove.forEach(key => this.store.removeItem(key));
     }
     saveGroupId(groupId) {

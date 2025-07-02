@@ -97,7 +97,6 @@ const eventManager = new EventManager((data) => {
             const threadId = store.loadThreadId()
             if (threadId != null) {
                 ctx.setThreadId(threadId);
-                console.log("Thread ID chargé depuis le store :", threadId);
                 graph.fetchUserGroups(eventManager, address).then(groups => {
                     ctx.setGroups(groups);
                     store.saveGroups(ctx.groups.map(g => g.serialize()));
@@ -127,7 +126,6 @@ const eventManager = new EventManager((data) => {
         }
         graph.fetchUserGroups(eventManager, address).then(groups => {
             ctx.setGroups(groups);
-            console.log(groups)
             store.saveGroups(ctx.groups.map(g => g.serialize()));
             if (!hasBeenLoaded) {
                 window.UtopixiaChat.ScreenManager.show("groupList");

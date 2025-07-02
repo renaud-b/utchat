@@ -9,7 +9,6 @@ class GraphService {
     }
 
     fetchUserGroups(eventManager, userAddress) {
-        console.log("fetchUserGroups for", userAddress);
         const $this = this;
         return new Promise((resolve, reject) => {
             if (!this.scriptID || !eventManager || !userAddress) {

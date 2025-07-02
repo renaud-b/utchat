@@ -38,6 +38,8 @@ class Group {
     replaceThread(thread) {
         const index = this.threads.findIndex((t) => t.id === thread.id);
         if (index !== -1) {
+            const previousThread = this.threads[index];
+            thread.lastReadTimestamp = previousThread.lastReadTimestamp
             this.threads[index] = thread;
         } else {
             console.warn(`Thread ${thread.id} not found in group ${this.id}`);

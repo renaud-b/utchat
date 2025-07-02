@@ -59,8 +59,13 @@ class Context {
                 }
                 incomingGroup.threads.forEach((incomingThread) => {
                     const existingThread = contextGroup.threads.find(t => t.id === incomingThread.id);
+                    if(!existingThread){
+                        contextGroup.addThread(incomingThread);
+                        this.eventBus.emit("thread:added", incomingThread);
+                        return;
+                    }
                     if(incomingThread.hash() !== existingThread?.hash()){
-                        contextGroup.replaceThread(incomingThread); // Ajoute le thread s'il n'existe pas ou s'il a été modifié
+                        contextGroup.replaceThread(incomingThread);
                         this.eventBus.emit("thread:updated", incomingThread);
                     }
                 })

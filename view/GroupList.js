@@ -80,7 +80,6 @@ class GroupList {
         const threads = selectedGroup.threads;
         const groupUnreadMap = {};
         this.ctx.groups.forEach(group => {
-            console.log("Calcul des messages non lus pour le groupe :", group);
             groupUnreadMap[group.id] = group.threads.reduce((sum, thread) => {
                 return sum + thread.messages.filter((m) => {
                     return m.timestamp > (thread.lastReadTimestamp || 0) && m.author !== this.ctx.userAddress;
@@ -181,7 +180,6 @@ class GroupList {
         const validateBtn = document.getElementById('btn-validate-private-conversation');
         validateBtn.onclick = () => {
             if (this.selectedContacts) {
-                console.log("Contact sélectionné :", this.selectedContacts);
                 this.selectedContacts.push(this.ctx.address)
                 this.writeService.createPrivateConversation(this.selectedContacts).then((contractResponse) => {
                     const privateThreadID = contractResponse.privateGraphID;

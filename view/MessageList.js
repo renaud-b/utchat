@@ -36,9 +36,7 @@ class MessageList {
     }
 
     handleThreadUpdate(data) {
-        console.log("received thread update", data.id, "for thread", this.thread.id);
         if (data.id === this.thread.id) {
-            console.log("updating thread", this.thread.id, "with data", data);
             this.thread.name = data.name || this.thread.name;
             this.thread.notificationsEnabled = data.notificationsEnabled || this.thread.notificationsEnabled;
 
@@ -47,8 +45,6 @@ class MessageList {
                 threadNameEl.textContent = this.thread.name || "Sans nom";
             }
 
-            // Start updating messages elements
-            console.log("received thread update for", this.thread.id, "with name", this.thread.name);
             if(this.thread.type === 'private'){
                 this.updateMessageNodes(data.messages || []);
             }
