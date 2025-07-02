@@ -97,6 +97,7 @@ class PublicGroupExplorer {
     reloadGroups() {
         const $this = this;
         window.UtopixiaChat.app.graph.fetchUserGroups(window.UtopixiaChat.app.sync.eventManager, this.ctx.address).then((groups) => {
+            $this.ctx.groupHash = MD5(groups.map(g => g.serialize()).join(''));
             $this.ctx.setGroups(groups);
             $this.store.saveGroups(groups.map(g => g.serialize()));
             $this.loadGroups(); // recharge la liste des groupes publics avec l'état à jour

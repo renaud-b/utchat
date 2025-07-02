@@ -1,3 +1,5 @@
+const UserDataGraphID = "b0586e65-e103-4f36-b644-574254a113d7"
+
 class SyncController {
     constructor(graphService, store, eventManager, context, eventBus) {
         this.graphService = graphService;
@@ -18,7 +20,19 @@ class SyncController {
         if (this.isSyncing) return;
         const $this = this
         new BlockchainObserver((tx) => {
+            if(tx.data.startsWith("urn:pi:graph:snap:"+UserDataGraphID) || tx.data.startsWith("urn:pi:graph:action:"+UserDataGraphID)){
+                this.graphService.fetchUserGroups(this.eventManager, this.context.address).then((groups) => {
+                    const newGroupHash = MD5(groups.map(g => g.serialize()).join(''));
+                    if (newGroupHash !== this.context.groupHash) {
+                        this.context.setGroups(groups);
+                        this.store.saveGroups(groups.map(g => g.serialize()));
+                        this.eventBus.emit("groups:updated", groups);
+                    }
+                })
 
+
+                return
+            }
             if(tx.data.startsWith("urn:pi:graph:action:"+this.userProfileID)){
                 Wormhole.getUserProfile(this.context.address).then((profile) => {
                     this.context.profile = profile;

@@ -1,3 +1,4 @@
+
 class Group {
     constructor({ context, id, name, avatar, isPrivate, isSelector, owner }) {
         this.id = id;
@@ -32,6 +33,15 @@ class Group {
             group.addThreads(threads);
         }
         return group;
+    }
+
+    replaceThread(thread) {
+        const index = this.threads.findIndex((t) => t.id === thread.id);
+        if (index !== -1) {
+            this.threads[index] = thread;
+        } else {
+            console.warn(`Thread ${thread.id} not found in group ${this.id}`);
+        }
     }
     serialize() {
         return {

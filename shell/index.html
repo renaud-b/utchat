@@ -166,10 +166,8 @@
 
                     var encryptedData = JSON.parse(localStorage.getItem("encryptedKey"));
                     PrivateKeyManager.decryptPrivateKey(encryptedData, password).then(function (encodedJWK) {
-                        console.log(encodedJWK)
                         PrivateKeyManager.storePrivateKey(encodedJWK);
                         $self.wallet = JSON.parse(atob(encodedJWK))
-                        console.log("Wallet loaded from storage:", $self.wallet);
                         $self.init();
                         $self.displayIdentity();
                         $self.run()
@@ -203,10 +201,8 @@
         }
 
         run() {
-            console.log(" send event to webview");
             const $self = this;
             this.webview.onload = () => {
-                console.log("WebView loaded, sending wallet data", $self.wallet);
                 $self.webview.contentWindow.postMessage({
                     'type': "start",
                     'wallet': {
@@ -245,6 +241,12 @@
         }
     });
 
+    registerMessageEventListener('disconnect', (msg) => {
+        localStorage.removeItem("encryptedKey")
+        window.location.reload()
+
+        console.log("start to disconnect user")
+    })
     // Chargement initial si wallet dans le localStorage
     app.loadWalletFromStorage();
 </script>

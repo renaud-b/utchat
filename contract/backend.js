@@ -1,6 +1,4 @@
-const GroupGraphID = "048d5c2d-85b6-4d5a-a994-249f6032ec3a";
 const UsersGraphID = "b0586e65-e103-4f36-b644-574254a113d7";
-const MessagesGraphID = "84d09c9b-387b-4430-8e8f-23c4304b59b3";
 const ProjectManagerAddress = "1MYmUX2E4s3uog5443j7bFLR3Enx63bHgU";
 function AddReactionToMessage(encodedUserTx) {
     return safeErrorWrapper(() => {

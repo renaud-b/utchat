@@ -1,9 +1,10 @@
 class UserProfileScreen {
-    constructor(container, store, context, eventBus) {
+    constructor(container, store, context, eventBus, eventManager) {
         this.container = container;
         this.store = store;
         this.ctx = context;
         this.eventBus = eventBus;
+        this.eventManager = eventManager;
     }
 
     render() {
@@ -138,7 +139,7 @@ class UserProfileScreen {
                     actions.push(Blackhole.Actions.update(profileRoot.object.id, "description", convertAccentsToHtmlCodes(descInput.value.trim())));
                 }
                 const groupAction = Blackhole.Actions.makeGroup(profileRoot.graphID, ...actions);
-                this.ctx.eventManager.sign(this.ctx.address, groupAction, 0).then((signedTx) => {
+                this.eventManager.sign(this.ctx.address, groupAction, 0).then((signedTx) => {
                     Singularity.saveSignedTx(signedTx).then((res) => {
                         Singularity.waitForTx(res.UUID).then(() => {
                             Utils.hideGlobalLoading();
@@ -149,6 +150,25 @@ class UserProfileScreen {
                 });
             });
         });
+
+        document.getElementById("btn-logout").addEventListener("click", () => {
+            const event = { type: "disconnect" };
+            new Promise((resolve, reject) => {
+                try {
+                    this.eventManager.send(event, resolve);
+                    this.store.removeAll()
+                } catch (error) {
+                    reject(error);
+                }
+            })
+                .then(() => {
+                    console.log("user disconnected");
+                })
+                .catch((err) => {
+                    console.error("Erreur lors de la déconnexion :", err);
+                });
+        });
+
 
         this.container.querySelector("#btn-back-profile").addEventListener("click", () => {
             window.UtopixiaChat.ScreenManager.show("groupList");

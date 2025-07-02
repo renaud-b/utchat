@@ -9,7 +9,7 @@ class ScreenManager {
         this.screens[screenId] = renderFn;
     }
 
-    show(screenId, data, options = { direction: 'right' }) {
+    show(screenId, data = {}, options = { direction: 'right' }) {
         if (this.currentScreen && this.currentScreen !== screenId) {
             this.historyStack.push({
                 screenId: this.currentScreen,

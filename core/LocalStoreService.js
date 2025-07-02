@@ -3,6 +3,18 @@ class LocalStoreService {
         this.store = window.localStorage;
         this.address = address
     }
+
+    removeAll() {
+        const keysToRemove = [];
+        for (let i = 0; i < this.store.length; i++) {
+            const key = this.store.key(i);
+            if (key.startsWith(`${this.address}:`)) {
+                keysToRemove.push(key);
+            }
+        }
+        console.log("remove all keys: ", keysToRemove)
+        keysToRemove.forEach(key => this.store.removeItem(key));
+    }
     saveGroupId(groupId) {
         if(groupId === null){
             this.store.removeItem(`groupId:${this.address}`);

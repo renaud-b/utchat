@@ -80,12 +80,12 @@ class GroupList {
         const threads = selectedGroup.threads;
         const groupUnreadMap = {};
         this.ctx.groups.forEach(group => {
-            const unread = group.threads.reduce((sum, thread) => {
+            console.log("Calcul des messages non lus pour le groupe :", group);
+            groupUnreadMap[group.id] = group.threads.reduce((sum, thread) => {
                 return sum + thread.messages.filter((m) => {
                     return m.timestamp > (thread.lastReadTimestamp || 0) && m.author !== this.ctx.userAddress;
                 }).length;
             }, 0);
-            groupUnreadMap[group.id] = unread;
         });
         const isPrivate = selectedGroup.isPrivate;
         const isOwner = selectedGroup.owner === this.ctx.address;

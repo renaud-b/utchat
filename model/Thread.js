@@ -75,6 +75,7 @@ class AbstractThread {
 
         return thread;
     }
+
 }
 
 class PublicThread extends AbstractThread {
@@ -101,6 +102,9 @@ class PublicThread extends AbstractThread {
             authorizedUsers: this.authorizedUsers // Liste des utilisateurs autorisés dans le groupe
         };
     }
+    hash(){
+        return MD5(JSON.stringify(this.serialize()));
+    }
 }
 
 class PrivateThread  extends AbstractThread {
@@ -122,6 +126,8 @@ class PrivateThread  extends AbstractThread {
             lastReadTimestamp: this.lastReadTimestamp,
             messages: this.messages.map(m => m.serialize())
         };
-
+    }
+    hash(){
+        return MD5(JSON.stringify(this.serialize()));
     }
 }

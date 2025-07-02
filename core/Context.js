@@ -51,8 +51,22 @@ class Context {
     }
 
     setGroups(groups) {
+        if(this.groups.length > 0){
+            groups.forEach((incomingGroup) => {
+                const contextGroup = this.findGroupById(incomingGroup.id);
+                if(!contextGroup){
+                    return
+                }
+                incomingGroup.threads.forEach((incomingThread) => {
+                    const existingThread = contextGroup.threads.find(t => t.id === incomingThread.id);
+                    if(incomingThread.hash() !== existingThread?.hash()){
+                        contextGroup.replaceThread(incomingThread); // Ajoute le thread s'il n'existe pas ou s'il a été modifié
+                        this.eventBus.emit("thread:updated", incomingThread);
+                    }
+                })
+            })
+        }
         this.groups = groups || [];
-        console.log("set groups")
         this.eventBus.emit("groups:updated", this.groups);
     }
 

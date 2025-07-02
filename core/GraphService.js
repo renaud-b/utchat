@@ -9,10 +9,15 @@ class GraphService {
     }
 
     fetchUserGroups(eventManager, userAddress) {
+        console.log("fetchUserGroups for", userAddress);
         const $this = this;
         return new Promise((resolve, reject) => {
             if (!this.scriptID || !eventManager || !userAddress) {
-                reject("fetchUserGroups: Configuration incomplète");
+                let missingField = [];
+                if (!this.scriptID) missingField.push("scriptID");
+                if (!eventManager) missingField.push("eventManager");
+                if (!userAddress) missingField.push("userAddress");
+                reject("fetchUserGroups: Configuration incomplète: " + missingField.join(", "));
                 return;
             }
 
@@ -52,7 +57,6 @@ class GraphService {
                     });
 
                     const publicGroups = [];
-
                     const privateThreadPromises = [];
 
                     for (const child of allChildren) {
@@ -60,20 +64,22 @@ class GraphService {
                             const links = child.children || [];
                             for (const link of links) {
                                 const thread = privateGroup.createPrivateThread(link.graphID, link.created_at);
-                                thread.lastReadTimestamp = $this.store.getThreadLastReadTimestamp(link.graphID)
+                                thread.lastReadTimestamp = $this.store.getThreadLastReadTimestamp(link.graphID);
 
-                                privateThreadPromises.push(new Promise((resolve, reject) => {
+                                privateThreadPromises.push(
+                                    new Promise((resolveThread) => {
                                         Blackhole.getGraph(link.graphID, "https://utopixia.com").then((g) => {
                                             thread.name = g.object.graphName || "Discussion privée";
                                             this.fetchPrivateMessagesForThread(eventManager, userAddress, thread.id)
                                                 .then((messages) => {
-                                                    //this.context.messages[thread.id] = messages;
                                                     thread.setMessages(messages);
-                                                    resolve(thread);
+                                                    resolveThread(thread);
                                                 })
-                                                .catch(console.warn)
-                                        })
-
+                                                .catch((err) => {
+                                                    console.warn("Erreur chargement messages privés :", err);
+                                                    resolveThread(thread);
+                                                });
+                                        });
                                     })
                                 );
                             }
@@ -84,27 +90,27 @@ class GraphService {
                                 name: child.name || "Groupe sans nom",
                                 avatar: `https://i.pravatar.cc/40?u=${child.graphID}`
                             });
-
                             publicGroups.push(publicGroup);
                         }
                     }
 
-                    // Wait for all threads/messages to load
-                    Promise.all([...privateThreadPromises]).then(()=>{
-
-                        // Also load children of public groups (threads)
-                        const finalPublicGroupPromises = publicGroups.map(group =>
-                            this.fetchGroupData(group).then(threads => {
-                                return group;
-                            })
-                        );
-
-                        Promise.all(finalPublicGroupPromises).then((resolvedPublicGroups)=>{
-                            const groups = [privateGroup, ...resolvedPublicGroups, selectorGroup];
+                    // Étape 1 : charger les threads privés
+                    Promise.all(privateThreadPromises)
+                        .then(() => {
+                            // Étape 2 : charger les threads des groupes publics
+                            return Promise.all(
+                                publicGroups.map((group) => this.fetchPublicGroupData(group))
+                            );
+                        })
+                        .then(() => {
+                            // Étape 3 : composer la liste finale des groupes
+                            const groups = [privateGroup, ...publicGroups, selectorGroup];
                             resolve(groups);
                         })
-                    })
-
+                        .catch((err) => {
+                            console.error("Erreur fetchUserGroups:", err);
+                            reject("UNKNOWN_ERROR");
+                        });
                 })
                 .catch((err) => {
                     console.error("Erreur fetchUserGroups:", err);
@@ -112,6 +118,7 @@ class GraphService {
                 });
         });
     }
+
     fetchPrivateMessagesForThread(eventManager, userAddress, groupGraphID) {
         return new Promise((resolve, reject) => {
 
@@ -161,7 +168,7 @@ class GraphService {
         });
     }
 
-    fetchGroupData(group) {
+    fetchPublicGroupData(group) {
         const $this = this;
         const groupId = group.id;
         return new Promise((resolve, reject) => {

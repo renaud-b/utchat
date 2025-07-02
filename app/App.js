@@ -61,7 +61,8 @@ const eventManager = new EventManager((data) => {
             document.getElementById("screen"),
             store,
             ctx,
-            events
+            events,
+            eventManager
         );
         view.render();
         return view;
@@ -80,7 +81,6 @@ const eventManager = new EventManager((data) => {
 
     writeService.registerUser().then(() => {
         let hasBeenLoaded = false
-        // 2️⃣ Charger les groupes depuis cache
         const rawGroups = store.loadGroups(address);
         if (rawGroups) {
             const groups = rawGroups.map(g => Group.deserialize(g, ctx));
@@ -97,9 +97,14 @@ const eventManager = new EventManager((data) => {
             const threadId = store.loadThreadId()
             if (threadId != null) {
                 ctx.setThreadId(threadId);
+                console.log("Thread ID chargé depuis le store :", threadId);
+                graph.fetchUserGroups(eventManager, address).then(groups => {
+                    ctx.setGroups(groups);
+                    store.saveGroups(ctx.groups.map(g => g.serialize()));
+                });
+
                 window.UtopixiaChat.ScreenManager.show('messageView', {threadId});
             } else {
-                console.log("show groupList")
                 window.UtopixiaChat.ScreenManager.show("groupList");
             }
         }
@@ -122,10 +127,9 @@ const eventManager = new EventManager((data) => {
         }
         graph.fetchUserGroups(eventManager, address).then(groups => {
             ctx.setGroups(groups);
-            const serializedGroups = ctx.groups.map(g => g.serialize());
-            store.saveGroups(serializedGroups);
+            console.log(groups)
+            store.saveGroups(ctx.groups.map(g => g.serialize()));
             if (!hasBeenLoaded) {
-                console.log("show groupList")
                 window.UtopixiaChat.ScreenManager.show("groupList");
             }
         });
@@ -138,7 +142,6 @@ const eventManager = new EventManager((data) => {
             const currentThread = ctx.getCurrentThread()
 
 
-            console.log("Saving thread config:", currentThread, threadName);
             if(currentThread.type === "private"){
                 const threadGraphID = currentThread.id;
                 if(threadName === currentThread.name){
@@ -162,11 +165,9 @@ const eventManager = new EventManager((data) => {
                 if(threadName.length > 0){
                     newThreadName = threadName
                 }
-                console.log("Saving public thread config:", currentThread, threadName, newThreadName);
 
                 const userListItems = document.querySelectorAll('#group-config-user-list [data-remove-user]');
                 const authorizedUsers = Array.from(userListItems).map(li => li.getAttribute('data-remove-user')).filter(Boolean);
-                console.log("Authorized users:", authorizedUsers);
 
                 writeService.editThread(threadID, groupGraphID, newThreadName, authorizedUsers.join(';')).then(() => {
                     document.getElementById("modal-thread-config").classList.add("hidden");
@@ -214,7 +215,6 @@ const eventManager = new EventManager((data) => {
         console.error("Erreur lors de l'enregistrement de l'utilisateur :", err);
         alert("Erreur lors de l'enregistrement de l'utilisateur : " + err.message);
     })
-
 })
 
 

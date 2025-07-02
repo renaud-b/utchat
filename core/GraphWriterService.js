@@ -33,7 +33,6 @@ class GraphWriteService {
         const payload = { requestType: "register-user", timestamp: Date.now() };
         return new Promise((resolve, reject) => {
             this._signAndExecute(payload, "RegisterUser", resolve).catch((err) => {
-                console.log(err)
                 if( err === 'user_already_exists'){
                     resolve()
                     return

@@ -36,13 +36,21 @@ class MessageList {
     }
 
     handleThreadUpdate(data) {
+        console.log("received thread update", data.id, "for thread", this.thread.id);
         if (data.id === this.thread.id) {
+            console.log("updating thread", this.thread.id, "with data", data);
             this.thread.name = data.name || this.thread.name;
             this.thread.notificationsEnabled = data.notificationsEnabled || this.thread.notificationsEnabled;
 
             const threadNameEl = this.container.querySelector('#thread-name');
             if (threadNameEl) {
                 threadNameEl.textContent = this.thread.name || "Sans nom";
+            }
+
+            // Start updating messages elements
+            console.log("received thread update for", this.thread.id, "with name", this.thread.name);
+            if(this.thread.type === 'private'){
+                this.updateMessageNodes(data.messages || []);
             }
         }
     }
@@ -100,30 +108,34 @@ class MessageList {
         const newMessages = data.messages || [];
 
         if (this.thread && this.thread.id === threadId) {
-            newMessages.forEach((message) => {
-                // Vérifier si le message est déjà dans les messageNodes
-                const existingIndex = this.messageNodes.findIndex(msg => msg.id === message.id);
-
-                if (existingIndex !== -1) {
-                    // Mise à jour du modèle
-                    this.messageNodes[existingIndex] = message;
-
-                    // Mise à jour du DOM
-                    const existingNode = this.container.querySelector(`#msg-${message.id}`);
-                    if (existingNode) {
-                        const newNode = this.buildMessageNode(message, this.ctx.users[message.author] || null);
-                        existingNode.replaceWith(newNode);
-                    }
-                } else {
-                    // Nouveau message : on l'ajoute au modèle et au DOM
-                    const newNode = this.buildMessageNode(message, this.ctx.users[message.author] || null);
-                    this.container.querySelector('#messages-container').appendChild(newNode);
-                    this.messageNodes.push(message);
-                }
-            });
-
-            this.scrollToBottom();
+            this.updateMessageNodes(newMessages)
         }
+    }
+
+    updateMessageNodes(messages) {
+        messages.forEach((message) => {
+            // Vérifier si le message est déjà dans les messageNodes
+            const existingIndex = this.messageNodes.findIndex(msg => msg.id === message.id);
+
+            if (existingIndex !== -1) {
+                // Mise à jour du modèle
+                this.messageNodes[existingIndex] = message;
+
+                // Mise à jour du DOM
+                const existingNode = this.container.querySelector(`#msg-${message.id}`);
+                if (existingNode) {
+                    const newNode = this.buildMessageNode(message, this.ctx.users[message.author] || null);
+                    existingNode.replaceWith(newNode);
+                }
+            } else {
+                // Nouveau message : on l'ajoute au modèle et au DOM
+                const newNode = this.buildMessageNode(message, this.ctx.users[message.author] || null);
+                this.container.querySelector('#messages-container').appendChild(newNode);
+                this.messageNodes.push(message);
+            }
+        });
+
+        this.scrollToBottom();
     }
 
     handleUserUpdate(data) {
@@ -394,7 +406,10 @@ Thread introuvable
 
                 const isPrivate = (this.thread.type === 'private');
                 const group = this.ctx.findGroupByThreadId(this.thread.id);
-                const isAdmin = (group && group.owner === this.ctx.address) || this.thread.authorizedUsers.some((addr) => addr === this.ctx.address);
+                let isAdmin = false
+                if(!isPrivate){
+                    isAdmin = (group && group.owner === this.ctx.address) || this.thread.authorizedUsers.some((addr) => addr === this.ctx.address);
+                }
 
                 // Remplir les valeurs
                 document.getElementById('group-config-name').value = this.thread.name || "";
@@ -424,7 +439,6 @@ Thread introuvable
                     // On boucle sur les authorizedUsers du thread
                     this.thread.authorizedUsers.forEach(addr => {
                         const addUserEntry = (userList, targetUser) => {
-
                             const pseudo = convertHtmlCodesToAccents(targetUser.name) || addr;
                             const avatar = Context.getSafeProfilePicture(targetUser.avatar);
 
