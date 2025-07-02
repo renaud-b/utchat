@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="fr" style="background-color: #1f2937" class="h-full">
+<head>
+    <meta charset="UTF-8" />
+    <title>Messagerie</title>
+    <meta content="project-manager,QACore" name="guilds" />
+    <meta content="prod" name="mode" />
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+            href="https://utopixia.com/ipfs/QmUR7vyGS4BTh8SnggNHC7HtQBvhtZighoy2bbjAXyAUpS"
+            rel="icon"
+    />
+    <script
+            crossorigin="anonymous"
+            src="https://kit.fontawesome.com/ab44efbce6.js"
+    ></script>
+    <style>
+
+        .pb-safe {
+            padding-bottom: constant(safe-area-inset-bottom, 16px);
+            padding-bottom: env(safe-area-inset-bottom, 16px);
+        }
+
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+            /* Safari */
+            -ms-user-select: none;
+            /* IE 10+ */
+        }
+    </style>
+</head>
+<body
+        height="750"
+        style="background-color: #1f2937"
+        class="h-full flex flex-col bg-gray-900 text-white overflow-hidden"
+        width="500"
+>
+<!-- Container principal pour injecter les écrans dynamiques -->
+<div id="screen" class="h-full flex flex-col overflow-hidden">
+    <!-- Le ScreenManager injectera ici les composants dynamiques -->
+</div>
+
+<div id="modal-reactions" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-gray-900 rounded p-4 w-64 max-h-96 overflow-y-auto">
+        <div class="flex justify-between items-center mb-2">
+            <div class="font-bold">Réactions</div>
+            <button id="close-modal-reactions" class="text-gray-400 hover:text-white">&times;</button>
+        </div>
+        <ul id="modal-reactions-list" class="space-y-2"></ul>
+    </div>
+</div>
+
+<!-- Modal de démarrage conversation -->
+<div
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        id="modal-start-conversation"
+>
+    <div
+            class="bg-gray-800 text-white w-full max-w-md rounded-lg shadow-lg p-6 space-y-4 border border-gray-700"
+    >
+        <h2 class="text-xl font-bold">👥 Choisir un contact</h2>
+        <ul class="space-y-2 max-h-80 overflow-y-auto" id="contacts-list">
+            <!-- Contacts dynamiques -->
+        </ul>
+        <div class="text-right">
+            <button
+                    class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500"
+                    onclick="PrivateConversationManager.closeStartConversationModal()"
+            >
+                Fermer
+            </button>
+        </div>
+    </div>
+</div>
+<!-- Modale demandes entrantes -->
+<div
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        id="modal-incoming-requests"
+>
+    <div
+            class="bg-gray-800 text-white w-full max-w-md rounded-lg shadow-lg p-6 space-y-4 border border-gray-700"
+    >
+        <h2 class="text-xl font-bold">📨 Demandes entrantes</h2>
+        <ul
+                id="incoming-requests-list"
+                class="space-y-2 max-h-80 overflow-y-auto"
+        >
+            <!-- Rempli dynamiquement -->
+        </ul>
+        <div class="text-right">
+            <button
+                    class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500"
+                    onclick="document.getElementById('modal-incoming-requests').classList.add('hidden')"
+            >
+                Fermer
+            </button>
+        </div>
+    </div>
+</div>
+<!-- modal add contact -->
+<div id="modal-add-contact" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-gray-800 text-white w-full max-w-sm rounded-lg shadow-lg p-6 space-y-4 border border-gray-700">
+        <h2 class="text-xl font-bold mb-4">➕ Ajouter un contact</h2>
+
+        <input id="add-contact-address" type="text" class="w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Adresse Utopixia du contact" />
+
+        <div class="flex gap-2">
+            <button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded" id="btn-confirm-add-contact">
+                Ajouter
+            </button>
+            <button class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded" onclick="document.getElementById('modal-add-contact').classList.add('hidden')">
+                Annuler
+            </button>
+        </div>
+
+        <button class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded" id="btn-scan-qrcode">
+            📷 Scanner un QRCode
+        </button>
+    </div>
+</div>
+
+<!-- end modal add contact --><!-- MODAL NOTIFICATION -->
+<div
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        id="notif-modal-overlay"
+>
+    <div
+            class="bg-gray-800 text-white rounded-lg p-6 w-96 shadow-lg relative"
+    >
+        <h2 class="text-xl font-bold mb-4">Paramètres de notification</h2>
+        <label
+                for="notif-toggle"
+                class="flex items-center space-x-3 cursor-pointer mb-4"
+        ><input
+                id="notif-toggle"
+                class="form-checkbox h-5 w-5 text-blue-500"
+                type="checkbox"
+        /><span
+        >Activer les notifications pour cette conversation</span
+        ></label
+        >
+        <div class="flex justify-end space-x-2">
+            <button
+                    onclick="NotificationManager.closeModal()"
+                    class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded"
+                    id="notif-cancel-btn"
+            >
+                Annuler</button
+            ><button
+                id="notif-save-btn"
+                onclick="NotificationManager.updateNotificationState()"
+                class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded"
+        >
+            Enregistrer
+        </button>
+        </div>
+        <button
+                id="notif-close-btn"
+                onclick="NotificationManager.closeModal()"
+                class="absolute top-2 right-3 text-white text-xl hover:text-red-400"
+        >
+            ×
+        </button>
+    </div>
+</div>
+<!-- end MODAL NOTIFICATION --><!-- modal badge -->
+<div
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        id="modal-badge-details"
+>
+    <div
+            class="bg-gray-800 text-white w-full max-w-sm rounded-lg shadow-lg p-6 border border-gray-700 space-y-4 text-center"
+    >
+        <img
+                alt="Badge image"
+                class="w-20 h-20 mx-auto rounded-full object-cover border border-gray-600"
+                src=""
+                id="badge-modal-image"
+        />
+        <h2 class="text-xl font-bold" id="badge-title">Nom du badge</h2>
+        <p class="text-sm text-slate-400 px-4" id="badge-description"></p>
+        <p class="text-xs text-slate-500" id="badge-level"></p>
+        <button
+                onclick="document.getElementById('modal-badge-details').classList.add('hidden')"
+                class="mt-4 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded"
+        >
+            Fermer
+        </button>
+    </div>
+</div>
+<!-- end modal badge --><!-- Modale Profil Utilisateur -->
+<div
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        id="modal-profile"
+>
+    <div
+            class="bg-gray-800 text-white w-full max-w-sm rounded-lg shadow-lg p-6 space-y-4 border border-gray-700 text-center"
+    >
+        <h2 id="profile-name" class="text-xl font-bold mb-4">Mon Profil</h2>
+        <img
+                alt="Profile"
+                class="w-24 h-24 rounded-full mx-auto mb-4"
+                id="profile-picture"
+                src=""
+        />
+        <div class="flex items-center justify-center gap-2 mb-2">
+          <span id="profile-address" class="text-xs text-gray-400"></span
+          ><button
+                id="btn-copy-address"
+                class="text-sm text-blue-400 hover:text-blue-200"
+        >
+            📋 Copier
+        </button>
+        </div>
+        <p
+                id="profile-description"
+                class="text-sm mb-4 text-slate-500 italic"
+        ></p>
+        <button
+            class="mt-2 text-sm text-gray-400 hover:text-gray-200 p-2 bg-gray-600 rounded"
+            onclick="document.getElementById('modal-profile').classList.add('hidden')"
+    >
+        Fermer
+    </button>
+    </div>
+</div>
+<!-- end modal config channel --><!-- Modale de configuration des channels -->
+<div
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        id="modal-create-thread"
+>
+    <div
+            class="bg-gray-800 text-white w-full max-w-md rounded-lg shadow-lg p-6 space-y-4 border border-gray-700"
+    >
+        <h2 class="text-xl font-bold">🔧 Créer un channel</h2>
+        <div>
+            <input
+                    id="new-channel-name"
+                    placeholder="Nom du channel (#general)"
+                    class="w-full px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    type="text"
+            />
+        </div>
+        <div class="text-right space-x-2">
+            <button
+                    onclick="document.getElementById('modal-create-thread').classList.add('hidden')"
+                    class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500"
+            >
+                Fermer</button
+            ><button
+                class="ml-2 mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                id="create-thread-btn"
+        >
+            <div
+                    class="spinner hidden w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+            ></div>
+            <span>Ajouter</span>
+        </button>
+        </div>
+    </div>
+</div>
+
+<div
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        id="modal-thread-config"
+>
+    <div class="bg-gray-800 text-white rounded-lg p-6 w-96 shadow-lg relative space-y-4">
+        <h2 class="text-xl font-bold mb-2">⚙️ Paramètres du thread</h2>
+
+        <div id="group-config-name-container" class="hidden">
+            <label class="block">
+                <span class="text-sm">Nom du thread</span>
+                <input type="text" id="group-config-name" class="w-full mt-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </label>
+        </div>
+
+        <div id="group-config-add-user-container" class="hidden">
+            <label class="block text-sm">Ajouter un utilisateur</label>
+            <div class="flex gap-2">
+                <input type="text" id="group-config-add-user" class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Adresse">
+                <button class="bg-green-600 hover:bg-green-700 px-3 py-2 rounded" id="group-config-add-user-btn">Ajouter</button>
+            </div>
+            <ul id="group-config-user-list" class="text-sm text-gray-300 mt-2 space-y-1"></ul>
+        </div>
+
+        <label class="flex items-center space-x-2">
+            <input type="checkbox" id="group-config-notify" class="form-checkbox h-5 w-5 text-blue-500">
+            <span>Activer les notifications</span>
+        </label>
+
+        <div class="flex justify-end space-x-2">
+            <button class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded" onclick="document.getElementById('modal-thread-config').classList.add('hidden')">Annuler</button>
+            <button class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded" id="thread-config-save">Enregistrer</button>
+            <button class="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded" id="delete-thread-btn">Supprimer</button>
+        </div>
+    </div>
+</div>
+
+<div id="qrcode-scanner-container" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+    <div class="bg-gray-900 p-4 rounded-lg space-y-2">
+        <div id="qrcode-reader" class="w-64 h-64"></div>
+        <button class="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded" id="btn-cancel-qrcode">
+            Annuler
+        </button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<script src="https://utopixia.com/ipfs/QmcSG2fLG6gc55vGf1P1dcfcmZcVqLsn2bUqPc34kiB7tN"></script>
+<!-- unicode --><!-- Core scripts -->
+<script src="https://utopixia.com/parser/graph/javascript/0b6a9301-cb03-4887-bdca-1170d13f21e5"></script>
+<!-- App eventManager -->
+<script src="https://utopixia.com/parser/graph/javascript/e16712e4-4141-4dd3-ac0f-3e7409890737"></script>
+<!-- gravity/graph -->
+<script src="https://utopixia.com/parser/graph/javascript/65bb8f2d-1bc8-419f-8d34-aac5242e4d0c"></script>
+<!-- gravity/singularity -->
+<script src="https://utopixia.com/parser/graph/javascript/e0911760-0959-4f6e-8214-5a140ff334cf"></script>
+<!-- gravity/blackhole -->
+<script src="https://utopixia.com/parser/graph/javascript/14b3fc37-e1dd-4b21-be23-a461efa2d910"></script>
+<!-- gravity/wormhole -->
+<script src="/utchat/core/Context.js"></script>
+<script src="/utchat/core/LocalStoreService.js"></script>
+<script src="/utchat/core/EventBus.js"></script>
+<script src="/utchat/core/GraphService.js"></script>
+<script src="/utchat/core/GraphWriterService.js"></script>
+<script src="/utchat/core/SyncController.js"></script>
+<script src="/utchat/app/ScreenManager.js"></script>
+<script src="/utchat/model/Message.js"></script>
+<script src="/utchat/model/Thread.js"></script>
+<script src="/utchat/model/Group.js"></script>
+<script src="/utchat/view/LoadingWelcome.js"></script>
+<script src="/utchat/view/ContactList.js"></script>
+<script src="/utchat/view/GroupList.js"></script>
+<script src="/utchat/view/UserProfileScreen.js"></script>
+<script src="/utchat/view/PublicGroupExplorer.js"></script>
+<script src="/utchat/view/MessageList.js"></script>
+<script src="/utchat/app/App.js"></script>
+<!-- app.js -->
+</body>
+</html>

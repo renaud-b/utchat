@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Utopixia Shell</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .alert {
+            background-color: #1f2937; /* gray-800 */
+            color: white;
+            border-left: 4px solid #3b82f6; /* blue-500 by default */
+            padding: 1rem;
+            border-radius: 0.375rem; /* rounded-md */
+            margin: 1rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            font-family: sans-serif;
+        }
+
+        .alert-danger {
+            border-left-color: #ef4444; /* red-500 */
+        }
+
+        .alert-warning {
+            border-left-color: #f59e0b; /* yellow-500 */
+        }
+
+        .alert-success {
+            border-left-color: #10b981; /* green-500 */
+        }
+
+        .alert-info {
+            border-left-color: #3b82f6; /* blue-500 */
+        }
+
+        .alert button {
+            background-color: #374151; /* gray-700 */
+            color: white;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+            border-radius: 0.25rem;
+            margin-top: 0.5rem;
+            margin-right: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .alert button:hover {
+            background-color: #4b5563; /* gray-600 */
+        }
+
+        .alert hr {
+            margin: 0.75rem 0;
+            border-top: 1px solid #4b5563; /* gray-600 */
+        }
+    </style>
+
+</head>
+<body class="h-full bg-gray-900 flex items-center justify-center text-white">
+<!-- Header -->
+<div class="fixed w-full  top-0 p-4 flex justify-between items-center">
+    <button
+            id="openModal"
+            class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-3 py-1 rounded"
+    >
+        <span id="identityButtonLabel">Charger une identité</span>
+    </button>
+</div>
+
+<div class="relative w-[475px] h-[967px]  bg-black rounded-xl shadow-2xl overflow-hidden">
+
+
+    <!-- WebView simulée -->
+    <iframe
+            id="webview"
+            src="about:blank"
+            class="w-full h-full border-none"
+    ></iframe>
+
+    <!-- Modal -->
+    <div
+            id="identityModal"
+            class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+    >
+        <div class="bg-gray-800 p-6 rounded-lg w-full max-w-md space-y-4">
+            <h2 class="text-lg font-semibold">Coller votre identité</h2>
+            <textarea
+                    id="identityInput"
+                    class="w-full h-32 bg-gray-700 text-white p-2 rounded"
+                    placeholder="Collez ici votre wallet..."
+            ></textarea>
+            <div class="flex justify-end gap-2">
+                <button
+                        id="closeModal"
+                        class="px-4 py-2 bg-gray-600 rounded hover:bg-gray-700"
+                >Annuler
+                </button>
+                <button
+                        id="saveIdentity"
+                        class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+                >Valider
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="alert-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+
+<script src="https://utopixia.com/parser/graph/javascript/1e32ff2d-150e-4e8e-ba71-3f1191333cde"></script><!-- md5 -->
+<script src="https://utopixia.com/parser/graph/javascript/e16712e4-4141-4dd3-ac0f-3e7409890737"></script><!-- graph -->
+<script src="https://utopixia.com/ipfs/QmcSG2fLG6gc55vGf1P1dcfcmZcVqLsn2bUqPc34kiB7tN"></script><!-- unicode -->
+<script src="https://utopixia.com/parser/graph/javascript/865965ba-ad91-4cce-a897-79c0e7f64b83"></script>
+<!-- tools/crypto.js -->
+<script src="https://utopixia.com/parser/graph/javascript/8db10759-67f2-4e0f-881b-2fb878e30955"></script>
+<!-- tools/ecdsa -->
+<script src="https://utopixia.com/parser/graph/javascript/045bfb54-5d2f-4e70-a16b-fd563d0662c4"></script>
+<!-- paradox -->
+<script src="https://utopixia.com/parser/graph/javascript/65bb8f2d-1bc8-419f-8d34-aac5242e4d0c"></script>
+<!-- core/singularity -->
+<script src="https://utopixia.com/parser/graph/javascript/e0911760-0959-4f6e-8214-5a140ff334cf"></script>
+<!-- core/blackhole -->
+<script src="https://utopixia.com/parser/graph/javascript/14b3fc37-e1dd-4b21-be23-a461efa2d910"></script>
+<!-- core/wormhole -->
+<script src="https://utopixia.com/parser/graph/javascript/bb4c8a57-abb2-4d7d-92fc-8201791a840e"></script><!-- config -->
+<script src="https://utopixia.com/parser/graph/javascript/7bf91317-5c31-4e2c-b93c-ed9cbc15420c"></script><!-- system -->
+<script src="https://utopixia.com/parser/graph/javascript/afce5e44-650b-4448-9e36-3cb50d5f9915"></script>
+<!-- request_manager -->
+
+<script>
+    const password = "utopixia"; // Password for encryption
+    const webViewURL = '/index.html'; // Password for encryption
+    Wormhole.endpoint = "https://utopixia.com"
+    Singularity.hostname = Wormhole.endpoint
+
+    class App {
+        constructor() {
+            this.wallet = null;
+            this.webview = document.getElementById('webview');
+        }
+
+        setWallet(wallet) {
+            this.wallet = wallet;
+
+            PrivateKeyManager.encryptPrivateKey(wallet, password).then(function (encryptedData) {
+                localStorage.setItem("encryptedKey", JSON.stringify(encryptedData));
+                localStorage.setItem("wallet", wallet);
+                PrivateKeyManager.storePrivateKey(wallet);
+            }).catch(console.error);
+
+            this.init();
+            this.displayIdentity();
+            this.run()
+        }
+
+        init() {
+            this.webview.src = webViewURL;
+        }
+
+        loadWalletFromStorage() {
+            const $self = this
+            return new Promise((resolve, reject) => {
+                try {
+
+                    var encryptedData = JSON.parse(localStorage.getItem("encryptedKey"));
+                    PrivateKeyManager.decryptPrivateKey(encryptedData, password).then(function (encodedJWK) {
+                        console.log(encodedJWK)
+                        PrivateKeyManager.storePrivateKey(encodedJWK);
+                        $self.wallet = JSON.parse(atob(encodedJWK))
+                        console.log("Wallet loaded from storage:", $self.wallet);
+                        $self.init();
+                        $self.displayIdentity();
+                        $self.run()
+                        resolve()
+                    }).catch(function (err) {
+                        console.error(err);
+                        localStorage.removeItem("wallet");
+                        reject()
+                    });
+                } catch (e) {
+                    console.warn("Wallet en cache invalide :", e);
+                    reject()
+                }
+            })
+        }
+
+        displayIdentity() {
+            if (this.wallet) {
+                try {
+                    Wormhole.getUserProfile(this.wallet.address).then((profile) => {
+                        const userName = profile.object.graphName || "Utilisateur sans nom";
+                        const label = document.getElementById("identityButtonLabel");
+                        label.textContent = userName;
+                    }).catch((error) => {
+                        console.error("Erreur lors de la récupération du profil :", error);
+                    });
+                } catch (e) {
+                    console.error("Erreur lors de l'affichage de l'identité :", e);
+                }
+            }
+        }
+
+        run() {
+            console.log(" send event to webview");
+            const $self = this;
+            this.webview.onload = () => {
+                console.log("WebView loaded, sending wallet data", $self.wallet);
+                $self.webview.contentWindow.postMessage({
+                    'type': "start",
+                    'wallet': {
+                        'address': $self.wallet.address,
+                        'windowID': '37',
+                    }
+                }, window.location.origin);
+                System.authorizedWindows.push('37')
+            };
+
+        }
+    }
+
+    const app = new App();
+
+    const openBtn = document.getElementById('openModal');
+    const closeBtn = document.getElementById('closeModal');
+    const modal = document.getElementById('identityModal');
+    const saveBtn = document.getElementById('saveIdentity');
+
+    openBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+    closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+
+    saveBtn.addEventListener('click', () => {
+        const input = document.getElementById('identityInput').value.trim();
+        if (!input) {
+            alert("Veuillez coller une identité valide");
+            return;
+        }
+        try {
+            app.setWallet(input);
+            modal.classList.add('hidden');
+        } catch (e) {
+            modal.classList.add('hidden');
+            alert("Une erreur est survenue lors de la sauvegarde de l'identité. Assurez-vous que le format est correct.");
+        }
+    });
+
+    // Chargement initial si wallet dans le localStorage
+    app.loadWalletFromStorage();
+</script>
+</body>
+</html>
