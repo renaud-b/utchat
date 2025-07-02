@@ -1,11 +1,13 @@
 class GroupList {
-    constructor(eventManager, container, store, graph, context, eventBus) {
+    constructor(eventManager, container, store, graph, context, eventBus, writeService) {
         this.eventManager = eventManager;
         this.container = container;
         this.graph = graph;
         this.store = store;
         this.ctx = context;
         this.eventBus = eventBus;
+        this.writeService = writeService;
+        this.selectedContacts = []
 
         if (!this.ctx.selectedGroupId && this.ctx.groups.length > 0) {
             this.ctx.selectedGroupId = this.ctx.groups[0].id;
@@ -161,25 +163,33 @@ class GroupList {
     `;
             li.dataset.address = contact.address;
             li.addEventListener('click', () => {
-                list.querySelectorAll('li').forEach(el => {
-                    el.classList.remove('border-blue-400')
-                    el.classList.remove('border')
-                });
-                li.classList.add('border');
-                li.classList.add('border-blue-600');
-                this.selectedContact = contact.address;
+                li.classList.toggle('border');
+                li.classList.toggle('border-blue-600');
+                if (this.selectedContacts.includes(contact.address)) {
+                    this.selectedContacts = this.selectedContacts.filter(addr => addr !== contact.address);
+                } else {
+                    this.selectedContacts.push(contact.address);
+                }
+
             });
             list.appendChild(li);
         });
 
-        this.selectedContact = null;
+        this.selectedContacts = [];
         modal.classList.remove('hidden');
 
         const validateBtn = document.getElementById('btn-validate-private-conversation');
         validateBtn.onclick = () => {
-            if (this.selectedContact) {
-                console.log("Contact sélectionné :", this.selectedContact);
-                // Plus tard : trigger la création de conversation
+            if (this.selectedContacts) {
+                console.log("Contact sélectionné :", this.selectedContacts);
+                this.selectedContacts.push(this.ctx.address)
+                this.writeService.createPrivateConversation(this.selectedContacts).then((contractResponse) => {
+                    const privateThreadID = contractResponse.privateGraphID;
+                    const conversationTitle = contractResponse.conversationTitle;
+                    const currentGroup = this.ctx.getCurrentGroup()
+                    const newThread = currentGroup.createPrivateThread(privateThreadID, Date.now())
+                    newThread.name = conversationTitle
+                })
                 modal.classList.add('hidden');
             } else {
                 alert("Veuillez sélectionner un contact.");

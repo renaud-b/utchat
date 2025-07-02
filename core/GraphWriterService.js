@@ -45,7 +45,11 @@ class GraphWriteService {
 
     createPrivateConversation(participants) {
         const payload = { requestType: "create-private-conversation", participants, timestamp: Date.now() };
-        return this._signAndExecute(payload, "CreatePrivateConversation");
+        return new Promise((resolve, reject) => {
+            this._signAndExecute(payload, "CreatePrivateConversation", (contractResponse) => {
+                resolve(contractResponse);
+            }).catch(reject)
+        })
     }
 
     postMessage(threadID, groupGraphID, content, respondTo = null, onContractExecuted = () => {}) {

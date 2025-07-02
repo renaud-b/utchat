@@ -29,7 +29,8 @@ const eventManager = new EventManager((data) => {
             store,
             graph,
             ctx,
-            events
+            events,
+            writeService
         );
         view.render();
         return view
