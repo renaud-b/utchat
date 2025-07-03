@@ -98,7 +98,7 @@ class GraphService {
                         .then(() => {
                             // Étape 2 : charger les threads des groupes publics
                             return Promise.all(
-                                publicGroups.map((group) => this.fetchPublicGroupData(group))
+                                publicGroups.filter((g) => g.id !== undefined).map((group) => this.fetchPublicGroupData(group))
                             );
                         })
                         .then(() => {
@@ -170,6 +170,8 @@ class GraphService {
     fetchPublicGroupData(group) {
         const $this = this;
         const groupId = group.id;
+        console.log("fetchPublicGroupData for group:", groupId);
+        console.log("group data: ", group);
         return new Promise((resolve, reject) => {
             Blackhole.getGraph(groupId, "https://utopixia.com").then((g) => {
                 group.name = g.object.graphName || "Groupe sans nom";

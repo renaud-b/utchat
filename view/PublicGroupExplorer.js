@@ -33,7 +33,6 @@ class PublicGroupExplorer {
 
     loadGroups() {
         const $this = this
-        // Exemple simplifié : à remplacer par un appel Wormhole/Blackhole qui liste les groupes publics
         Blackhole.getGraph("048d5c2d-85b6-4d5a-a994-249f6032ec3a", "https://utopixia.com").then((graph) => {
             $this.parsePublicGroups(graph).then((groups) => {
                 $this.allGroups = groups
@@ -76,8 +75,16 @@ class PublicGroupExplorer {
     }
     joinGroup(groupID) {
         const writeService = new GraphWriteService(window.UtopixiaChat.app.sync.eventManager, this.ctx.address);
+        // put a spinner in the button
+        const joinButton = this.container.querySelector(`[data-join="${groupID}"]`);
+        if (joinButton) {
+            joinButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Rejoindre...';
+            joinButton.disabled = true; // Disable the button to prevent multiple clicks
+        }
         writeService.joinGroup(groupID).then(() => {
-            this.reloadGroups();
+            this.reloadGroups().then(() => {
+                this.render()
+            })
         }).catch((err) => {
             console.error("Erreur joinGroup :", err);
             alert("Erreur lors du joinGroup : " + err);
@@ -86,8 +93,16 @@ class PublicGroupExplorer {
 
     quitGroup(groupID) {
         const writeService = new GraphWriteService(window.UtopixiaChat.app.sync.eventManager, this.ctx.address);
+        // put a spinner in the button
+        const quitButton = this.container.querySelector(`[data-quit="${groupID}"]`);
+        if (quitButton) {
+            quitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Quitter...';
+            quitButton.disabled = true; // Disable the button to prevent multiple clicks
+        }
         writeService.leaveGroup(groupID).then(() => {
-            this.reloadGroups();
+            this.reloadGroups().then(() => {
+                this.render()
+            })
         }).catch((err) => {
             console.error("Erreur leaveGroup :", err);
             alert("Erreur lors du leaveGroup : " + err);
@@ -95,13 +110,16 @@ class PublicGroupExplorer {
     }
 
     reloadGroups() {
-        const $this = this;
-        window.UtopixiaChat.app.graph.fetchUserGroups(window.UtopixiaChat.app.sync.eventManager, this.ctx.address).then((groups) => {
-            $this.ctx.groupHash = MD5(groups.map(g => g.serialize()).join(''));
-            $this.ctx.setGroups(groups);
-            $this.store.saveGroups(groups.map(g => g.serialize()));
-            $this.loadGroups(); // recharge la liste des groupes publics avec l'état à jour
-        });
+        return new Promise((resolve) => {
+            const $this = this;
+            window.UtopixiaChat.app.graph.fetchUserGroups(window.UtopixiaChat.app.sync.eventManager, this.ctx.address).then((groups) => {
+                $this.ctx.groupHash = MD5(groups.map(g => g.serialize()).join(''));
+                $this.ctx.setGroups(groups);
+                $this.store.saveGroups(groups.map(g => g.serialize()));
+                $this.loadGroups(); // recharge la liste des groupes publics avec l'état à jour
+                resolve()
+            });
+        })
     }
 
     displayGroups(groups) {
