@@ -56,7 +56,7 @@ class GroupList {
         const preview = lastMessage ? this.truncate(lastMessage.content, 40) : "Aucun message pour l’instant";
         const formattedDate = lastMessage ? this.formatDate(lastMessage.timestamp) : "";
         const unreadCount = thread.messages.filter((m) => {
-            return m.timestamp > (thread.lastReadTimestamp || 0) && m.author !== this.ctx.userAddress;
+            return m.timestamp > (thread.lastReadTimestamp || 0) && m.author !== this.ctx.address;
         }).length;
 
         return `
@@ -82,7 +82,7 @@ class GroupList {
         this.ctx.groups.forEach(group => {
             groupUnreadMap[group.id] = group.threads.reduce((sum, thread) => {
                 return sum + thread.messages.filter((m) => {
-                    return m.timestamp > (thread.lastReadTimestamp || 0) && m.author !== this.ctx.userAddress;
+                    return m.timestamp > (thread.lastReadTimestamp || 0) && m.author !== this.ctx.address;
                 }).length;
             }, 0);
         });
@@ -132,7 +132,12 @@ class GroupList {
                 }
                 this.ctx.setGroupId(id);
                 this.store.saveGroupId(id);
-                this.render();
+
+                this.graph.fetchUserGroups(eventManager, this.ctx.address).then(groups => {
+                    this.ctx.setGroups(groups);
+                    this.store.saveGroups(this.ctx.groups.map(g => g.serialize()));
+                    //this.render();
+                });
             });
         });
         const btnAddThread = this.container.querySelector('#btn-add-thread');

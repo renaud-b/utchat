@@ -57,7 +57,8 @@ class MessageList {
     handleRemoveUser(e) {
         if (e.target.matches('[data-remove-user]')) {
             const addr = e.target.getAttribute('data-remove-user');
-            this.thread.allowedUsers = this.thread.allowedUsers.filter(a => a !== addr);
+            console.log(this.thread)
+            this.thread.authorizedUsers = this.thread.authorizedUsers.filter(a => a !== addr);
             e.target.closest('li').remove();
         }
     }
@@ -66,12 +67,12 @@ class MessageList {
         const addr = addrInput.value.trim();
         if (!addr) return;
 
-        if (!this.thread.allowedUsers) {
-            this.thread.allowedUsers = [];
+        if (!this.thread.authorizedUsers) {
+            this.thread.authorizedUsers = [];
         }
 
         // Vérifie doublon
-        if (this.thread.allowedUsers.includes(addr)) {
+        if (this.thread.authorizedUsers.includes(addr)) {
             alert("Cet utilisateur est déjà dans la liste.");
             return;
         }
@@ -81,7 +82,7 @@ class MessageList {
             const pseudo = convertHtmlCodesToAccents(profile.object.graphName) || addr;
             const avatar = Context.getSafeProfilePicture(profile.object);
 
-            this.thread.allowedUsers.push(addr);
+            this.thread.authorizedUsers.push(addr);
 
             const userList = document.getElementById('group-config-user-list');
 
@@ -489,10 +490,12 @@ Thread introuvable
         }
 
         const cancelReplyBtn = this.container.querySelector('#btn-cancel-reply');
-        cancelReplyBtn.addEventListener('click', () => {
-            this.currentReplyToId = null;
-            this.container.querySelector('#reply-preview').classList.add('hidden');
-        });
+        if(cancelReplyBtn){
+            cancelReplyBtn.addEventListener('click', () => {
+                this.currentReplyToId = null;
+                this.container.querySelector('#reply-preview').classList.add('hidden');
+            });
+        }
 
     }
     bindMessageActions(msgEl, msgGroupEl) {
