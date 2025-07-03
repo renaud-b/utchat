@@ -40,7 +40,7 @@ class Context {
                 });
             })).then(() => {
                 if ($this.eventBus) {
-                    $this.eventBus.emit("contacts:loaded", $this.contacts);
+                    $this.eventBus.emit("contacts:updated", $this.contacts);
                 }
             });
         })

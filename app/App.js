@@ -120,7 +120,7 @@ const eventManager = new EventManager((data) => {
         if (!hasBeenLoaded) {
             window.UtopixiaChat.ScreenManager.show("loadingWelcome");
         }
-        
+
         graph.fetchProfile(address).then((profile) => {
             ctx.profile = profile;
             store.saveProfile(profile);
@@ -137,6 +137,47 @@ const eventManager = new EventManager((data) => {
 
         sync.start();
 
+        document.getElementById("btn-confirm-add-contact").addEventListener("click", () => {
+            const addressInput = document.getElementById("add-contact-address");
+            const contactAddress = addressInput.value.trim();
+            if (!contactAddress) {
+                alert("Veuillez entrer une adresse valide.");
+                return;
+            }
+
+            Wormhole.getUserProfile(contactAddress).then((contactProfile) => {
+                Wormhole.getUserProfile(address).then((userProfile) => {
+                    const contactsNode = userProfile.next("dapps").next("contacts")
+                    const contactAction = Blackhole.Actions.makeUpdate(userProfile.graphID, contactsNode.object.id, "children", contactAddress)
+                    eventManager.sign(address, contactAction, 0).then((signedTx) => {
+                        Singularity.saveSignedTx(signedTx).then((res) => {
+                            Singularity.waitForTx(res.UUID).then(() => {
+                                console.log("Contact ajouté avec succès :", contactAddress);
+                            });
+                        });
+                    })
+                })
+
+                let avatarUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2RkZGRkZCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iMzUiIHI9IjIwIiBmaWxsPSIjOTk5OTk5Ii8+PHJlY3QgeT0iNjAiIHdpZHRoPSI3MCIgaGVpZ2h0PSI0MCIgeD0iMTUiIGZpbGw9IiM5OTk5OTkiIHJ4PSIxNSIvPjwvc3ZnPg==';
+                if (contactProfile.object.profilePictureURL && contactProfile.object.profilePictureURL.length > 0) {
+                    avatarUrl = "https://utopixia.com" + contactProfile.object.profilePictureURL;
+                }
+                ctx.contacts.push({
+                    address: contactAddress,
+                    name: convertHtmlCodesToAccents(contactProfile.object.graphName),
+                    description: convertHtmlCodesToAccents(contactProfile.object.description || ""),
+                    avatar: avatarUrl
+                });
+
+                events.emit("contacts:updated", ctx.users);
+                document.getElementById("modal-add-contact").classList.add("hidden");
+                addressInput.value = "";
+
+            }).catch(err => {
+                console.error("Erreur lors de l'ajout du contact :", err);
+                alert("Erreur lors de l'ajout du contact : " + err.message);
+            });
+        })
 
         document.getElementById("thread-config-save").addEventListener("click", () => {
             const threadName = document.getElementById("group-config-name").value.trim();

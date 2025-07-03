@@ -4,8 +4,39 @@ class ContactsList {
         this.address = address;
         this.ctx = context;
 
-        this.handleContactsLoaded = this.render.bind(this);
-        //this.eventBus.on("contacts:loaded", this.handleContactsLoaded);
+        this.handleContactsLoaded = this.reloadAndRender.bind(this);
+        this.ctx.eventBus.on("contacts:updated", this.handleContactsLoaded);
+    }
+
+    reloadAndRender() {
+        Wormhole.getUserProfile(this.address).then((profile) => {
+            if(!profile.hasNext("dapps")){
+                return
+            }
+            const dapps = profile.next("dapps")
+            if(!dapps.hasNext("contacts")){
+                return
+            }
+            const contacts = dapps.next("contacts")
+            Promise.all(contacts.children().map(node => {
+                const contactAddress = node.object.name;
+                Wormhole.getUserProfile(contactAddress).then((contactProfile) => {
+                    let avatarUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2RkZGRkZCIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iMzUiIHI9IjIwIiBmaWxsPSIjOTk5OTk5Ii8+PHJlY3QgeT0iNjAiIHdpZHRoPSI3MCIgaGVpZ2h0PSI0MCIgeD0iMTUiIGZpbGw9IiM5OTk5OTkiIHJ4PSIxNSIvPjwvc3ZnPg==';
+                    if (contactProfile.object.profilePictureURL && contactProfile.object.profilePictureURL.length > 0) {
+                        avatarUrl = "https://utopixia.com" + contactProfile.object.profilePictureURL;
+                    }
+                    this.ctx.contacts.push({
+                        address: contactAddress,
+                        name: convertHtmlCodesToAccents(contactProfile.object.graphName),
+                        description: convertHtmlCodesToAccents(contactProfile.object.description || ""),
+                        avatar: avatarUrl
+                    });
+                })
+            })).then(() => {
+                this.render()
+            })
+        })
+
     }
 
     render() {
@@ -53,10 +84,7 @@ class ContactsList {
         });
 
         // Ajout de contact
-        this.container.querySelector('#btn-confirm-add-contact').addEventListener('click', () => {
-            Wormhole.getUserProfile(this.address).then((currentUserProfile) => {
-
-            })
+        this.container.querySelector('#btn-add-contact').addEventListener('click', () => {
             document.getElementById('modal-add-contact').classList.remove('hidden');
         });
 

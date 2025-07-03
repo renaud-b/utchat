@@ -128,7 +128,6 @@ class UserProfileScreen {
         descInput.addEventListener("input", updateButtonState);
 
         saveBtn.addEventListener("click", () => {
-            Utils.showGlobalLoading("Mise à jour du profil...");
             Wormhole.getUserProfile(this.ctx.address).then((profileRoot) => {
                 const actions = [];
                 if (nameInput.value.trim() !== initialName) {
@@ -141,7 +140,6 @@ class UserProfileScreen {
                 this.eventManager.sign(this.ctx.address, groupAction, 0).then((signedTx) => {
                     Singularity.saveSignedTx(signedTx).then((res) => {
                         Singularity.waitForTx(res.UUID).then(() => {
-                            Utils.hideGlobalLoading();
                             saveBtn.disabled = true;
                             saveBtn.classList.add("invisible");
                         });
